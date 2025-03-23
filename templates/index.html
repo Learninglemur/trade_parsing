@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Upload - Trade Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        #uploadResult {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        #tradesList {
+            margin-top: 20px;
+        }
+        .sample-csv {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .broker-format {
+            margin-top: 20px;
+            display: none;
+        }
+        .broker-format.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV Trade Data Upload</h1>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="broker">Broker:</label>
+                <select id="broker" name="broker" class="form-control" required onchange="updateFormatInfo()">
+                    <option value="">Select a broker</option>
+                    <option value="Fidelity">Fidelity</option>
+                    <option value="InteractiveBrokers">Interactive Brokers</option>
+                    <option value="RobinHood">Robinhood</option>
+                    <option value="Schwab">Charles Schwab</option>
+                    <option value="TastyTrade">TastyTrade</option>
+                    <option value="TradingView">TradingView</option>
+                    <option value="Webull">Webull</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="csvFile">Select CSV File:</label>
+                <input type="file" id="csvFile" name="csvFile" class="form-control" accept=".csv" required>
+            </div>
+            <button type="submit" class="btn">Upload</button>
+        </form>
+        
+        <div id="uploadResult"></div>
+        <div id="tradesList"></div>
+        
+        <div class="sample-csv">
+            <h3>CSV Format Information</h3>
+            
+            <div id="default-format" class="broker-format active">
+                <p>Your CSV file should have the following columns:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Side</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AAPL</td>
+                            <td>10</td>
+                            <td>190.50</td>
+                            <td>Buy</td>
+                            <td>2025-03-21</td>
+                        </tr>
+                        <tr>
+                            <td>MSFT</td>
+                            <td>5</td>
+                            <td>425.75</td>
+                            <td>Buy</td>
+                            <td>2025-03-21</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="Fidelity-format" class="broker-format">
+                <p>For Fidelity exports, we recognize these columns:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Run Date</th>
+                            <th>Action</th>
+                            <th>Symbol</th>
+                            <th>Quantity</th>
+                            <th>Price ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>03/21/2025</td>
+                            <td>YOU BOUGHT</td>
+                            <td>AAPL</td>
+                            <td>10</td>
+                            <td>190.50</td>
+                        </tr>
+                        <tr>
+                            <td>03/21/2025</td>
+                            <td>SOLD</td>
+                            <td>MSFT</td>
+                            <td>5</td>
+                            <td>425.75</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="InteractiveBrokers-format" class="broker-format">
+                <p>For Interactive Brokers exports, we expect the standard format with Symbol, Quantity, Price, Side, and Date columns.</p>
+            </div>
+            
+            <div id="RobinHood-format" class="broker-format">
+                <p>For Robinhood exports, we expect the standard format with Symbol, Quantity, Price, Side, and Date columns.</p>
+            </div>
+            
+            <div id="Schwab-format" class="broker-format">
+                <p>For Charles Schwab exports, we expect the standard format with Symbol, Quantity, Price, Side, and Date columns.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateFormatInfo() {
+            // Hide all format info divs
+            const formatDivs = document.querySelectorAll('.broker-format');
+            formatDivs.forEach(div => {
+                div.classList.remove('active');
+            });
+            
+            // Show the selected broker's format info
+            const selectedBroker = document.getElementById('broker').value;
+            if (selectedBroker) {
+                const formatDiv = document.getElementById(`${selectedBroker}-format`);
+                if (formatDiv) {
+                    formatDiv.classList.add('active');
+                } else {
+                    // If no specific format info exists, show the default
+                    document.getElementById('default-format').classList.add('active');
+                }
+            } else {
+                // Show default format if no broker selected
+                document.getElementById('default-format').classList.add('active');
+            }
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('uploadResult');
+                const tradesDiv = document.getElementById('tradesList');
+                
+                if (data.success) {
+                    resultDiv.className = 'success';
+                    let messageHtml = `<h3>Upload Successful</h3><p>${data.message}</p>`;
+                    
+                    if (data.total_rows !== undefined) {
+                        messageHtml += `<p>Total rows in CSV: ${data.total_rows}</p>`;
+                    }
+                    
+                    if (data.error_rows !== undefined && data.error_rows > 0) {
+                        messageHtml += `<p>Rows with errors: ${data.error_rows}</p>`;
+                    }
+                    
+                    if (data.symbol_enhancement_enabled && data.enhanced_symbols !== undefined) {
+                        messageHtml += `<p>Symbols enhanced by AI: ${data.enhanced_symbols} (enabled for ${data.broker_format})</p>`;
+                    }
+                    
+                    if (data.saved_path) {
+                        messageHtml += `<p>File saved to uploads folder as: ${data.saved_path}</p>`;
+                        messageHtml += `<p>A processed file was also created with prefix "processed_"</p>`;
+                    }
+                    
+                    resultDiv.innerHTML = messageHtml;
+                    
+                    if (data.trades && data.trades.length > 0) {
+                        let tradesHtml = '<h3>Processed Trades</h3><table><thead><tr><th>Symbol</th><th>Original Symbol</th><th>Quantity</th><th>Price</th><th>Side</th><th>Date</th><th>Description</th></tr></thead><tbody>';
+                        
+                        data.trades.forEach(trade => {
+                            const origSymbol = trade.original_symbol || '';
+                            const description = trade.description || '';
+                            tradesHtml += `<tr>
+                                <td>${trade.symbol}</td>
+                                <td>${origSymbol}</td>
+                                <td>${trade.quantity}</td>
+                                <td>${trade.price}</td>
+                                <td>${trade.side}</td>
+                                <td>${trade.date}</td>
+                                <td>${description}</td>
+                            </tr>`;
+                        });
+                        
+                        tradesHtml += '</tbody></table>';
+                        tradesDiv.innerHTML = tradesHtml;
+                    } else {
+                        tradesDiv.innerHTML = '';
+                    }
+                } else {
+                    resultDiv.className = 'error';
+                    let errorHtml = `<h3>Upload Failed</h3>`;
+                    
+                    if (data.error) {
+                        errorHtml += `<p>${data.error}</p>`;
+                    }
+                    
+                    // Show fieldnames if available (column mismatch issue)
+                    if (data.fieldnames) {
+                        errorHtml += `<p>Your CSV contains these columns: ${data.fieldnames.join(', ')}</p>`;
+                        errorHtml += `<p>Required columns are: Symbol, Quantity, Price, Side</p>`;
+                    }
+                    
+                    resultDiv.innerHTML = errorHtml;
+                    tradesDiv.innerHTML = '';
+                }
+                
+                resultDiv.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const resultDiv = document.getElementById('uploadResult');
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<h3>Upload Failed</h3><p>An error occurred while processing your request.</p>`;
+                resultDiv.style.display = 'block';
+                document.getElementById('tradesList').innerHTML = '';
+            });
+        });
+    </script>
+</body>
+</html> 

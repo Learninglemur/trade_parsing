@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.3"
+  },
+  "name": "trade-csv-upload-api",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "python app.py",
+    "dev": "uvicorn app:app --reload",
+    "reset-db": "python reset_db.py",
+    "test": "curl -s http://localhost:3000 | grep 'Trade History'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
